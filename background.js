@@ -8,15 +8,9 @@ function detectTabletMode() {
             if (navigator.userAgentData.platform === 'Windows') {
                 const majorPlatformVersion = parseInt(ua.platformVersion.split('.')[0]);
                 if (majorPlatformVersion >= 13) {
-                    if (window.matchMedia('(pointer: coarse)').matches) {
-                        switchToMobileView();
-                        updateDeviceMode('Tablet');
-                        updateViewMode('Mobile');
-                    } else {
-                        switchToNormalView();
-                        updateDeviceMode('Normal');
-                        updateViewMode('Normal');
-                    }
+                    chrome.storage.local.set({ isWindows11: true });
+                } else {
+                    chrome.storage.local.set({ isWindows11: false });
                 }
             }
         });
@@ -45,40 +39,5 @@ function switchToNormalView() {
                 }
             });
         });
-    });
-}
-
-// Listen for changes in tablet mode
-window.matchMedia('(pointer: coarse)').addEventListener('change', (e) => {
-    if (e.matches) {
-        switchToMobileView();
-        updateDeviceMode('Tablet');
-        updateViewMode('Mobile');
-    } else {
-        switchToNormalView();
-        updateDeviceMode('Normal');
-        updateViewMode('Normal');
-    }
-});
-
-function updateDeviceMode(mode) {
-    chrome.storage.local.set({ deviceMode: mode });
-}
-
-function updateViewMode(mode) {
-    chrome.storage.local.set({ viewMode: mode });
-}
-
-// Function to get the current device mode
-function getDeviceMode(callback) {
-    chrome.storage.local.get('deviceMode', (result) => {
-        callback(result.deviceMode);
-    });
-}
-
-// Function to get the current view mode
-function getViewMode(callback) {
-    chrome.storage.local.get('viewMode', (result) => {
-        callback(result.viewMode);
     });
 }
