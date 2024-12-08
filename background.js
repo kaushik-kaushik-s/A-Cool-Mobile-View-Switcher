@@ -8,9 +8,17 @@ function detectTabletMode() {
             if (navigator.userAgentData.platform === 'Windows') {
                 const majorPlatformVersion = parseInt(ua.platformVersion.split('.')[0]);
                 if (majorPlatformVersion >= 13) {
-                    chrome.storage.local.set({ isWindows11: true });
+                    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+                        if (message.type === 'getDeviceMode') {
+                            sendResponse({ isWindows11: true });
+                        }
+                    });
                 } else {
-                    chrome.storage.local.set({ isWindows11: false });
+                    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+                        if (message.type === 'getDeviceMode') {
+                            sendResponse({ isWindows11: false });
+                        }
+                    });
                 }
             }
         });

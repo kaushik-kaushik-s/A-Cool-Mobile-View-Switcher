@@ -31,8 +31,8 @@ function updateDeviceMode(mode) {
     if (mode) {
         document.getElementById('deviceMode').textContent = `Device Mode: ${mode}`;
     } else {
-        chrome.storage.local.get('isWindows11', (result) => {
-            if (result.isWindows11) {
+        chrome.runtime.sendMessage({ type: 'getDeviceMode' }, (response) => {
+            if (response.isWindows11) {
                 if (window.matchMedia('(pointer: coarse)').matches) {
                     document.getElementById('deviceMode').textContent = 'Device Mode: Tablet';
                 } else {
