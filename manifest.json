@@ -1,29 +1,32 @@
-// manifest.json
 {
   "manifest_version": 3,
-  "name": "Mobile View Switcher",
+  "name": "Mobile Browser Spoofer",
   "version": "1.0",
-  "description": "Automatically switches tabs to mobile view",
+  "description": "Forces websites to show their mobile version through comprehensive spoofing",
   "permissions": [
     "webNavigation",
     "declarativeNetRequest",
     "storage",
-    "tabs"
+    "tabs",
+    "webRequest"
+  ],
+  "host_permissions": [
+    "<all_urls>"
   ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "images/icon16.png",
-      "48": "images/icon48.png",
-      "128": "images/icon128.png"
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
     }
   },
   "background": {
     "service_worker": "background.js"
   },
-  "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
-  }
+  "content_scripts": [{
+    "matches": ["<all_urls>"],
+    "js": ["content.js"],
+    "run_at": "document_start"
+  }]
 }
