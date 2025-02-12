@@ -1,67 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
-    updateDeviceMode();
-    updateViewMode();
+    const toggle = document.getElementById('mobileToggle');
 
-    document.getElementById('switchToMobile').addEventListener('click', () => {
-        chrome.runtime.getBackgroundPage((backgroundPage) => {
-            backgroundPage.switchToMobileView();
-            updateViewMode('Mobile');
-        });
+    chrome.storage.local.get(['isMobileEnabled'], (result) => {
+        toggle.checked = result.isMobileEnabled;
     });
 
-    document.getElementById('switchToNormal').addEventListener('click', () => {
-        chrome.runtime.getBackgroundPage((backgroundPage) => {
-            backgroundPage.switchToNormalView();
-            updateViewMode('Normal');
+    toggle.addEventListener('change', () => {
+        chrome.runtime.sendMessage({
+            action: 'toggleMobile',
+            enabled: toggle.checked
         });
-    });
-
-    window.matchMedia('(pointer: coarse)').addEventListener('change', (e) => {
-        if (e.matches) {
-            updateDeviceMode('Tablet');
-            updateViewMode('Mobile');
-        } else {
-            updateDeviceMode('Normal');
-            updateViewMode('Normal');
-        }
     });
 });
-
-function updateDeviceMode(mode) {
-    if (mode) {
-        document.getElementById('deviceMode').textContent = `Device Mode: ${mode}`;
-    } else {
-        chrome.runtime.sendMessage({ type: 'getDeviceMode' }, (response) => {
-            if (response.isWindows11) {
-                if (window.matchMedia('(pointer: coarse)').matches) {
-                    document.getElementById('deviceMode').textContent = 'Device Mode: Tablet';
-                } else {
-                    document.getElementById('deviceMode').textContent = 'Device Mode: Normal';
-                }
-            } else {
-                document.getElementById('deviceMode').textContent = 'Device Mode: Not Windows 11';
-            }
-        });
-    }
-}
-
-function updateViewMode(mode) {
-    if (mode) {
-        document.getElementById('viewMode').textContent = `View Mode: ${mode}`;
-    } else {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            chrome.scripting.executeScript({
-                target: { tabId: tabs[0].id },
-                func: () => {
-                    return document.querySelector('meta[name="viewport"]').getAttribute('content');
-                }
-            }, (results) => {
-                if (results[0].result.includes('width=device-width')) {
-                    document.getElementById('viewMode').textContent = 'View Mode: Mobile';
-                } else {
-                    document.getElementById('viewMode').textContent = 'View Mode: Normal';
-                }
-            });
-        });
-    }
-}

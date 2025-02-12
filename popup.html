@@ -1,29 +1,68 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Mobile View Switcher</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            width: 200px;
             padding: 10px;
+            font-family: Arial, sans-serif;
         }
-        .status {
-            margin-bottom: 10px;
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 10px 0;
         }
-        .button {
-            margin: 5px 0;
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
         }
     </style>
 </head>
 <body>
-<h1>Mobile View Switcher</h1>
-<div class="status">
-    <p id="deviceMode">Device Mode: Unknown</p>
-    <p id="viewMode">View Mode: Unknown</p>
+<h2>Mobile View Switcher</h2>
+<div class="toggle-container">
+    <span>Mobile View</span>
+    <label class="switch">
+        <input type="checkbox" id="mobileToggle">
+        <span class="slider"></span>
+    </label>
 </div>
-<button class="button" id="switchToMobile">Switch to Mobile View</button>
-<button class="button" id="switchToNormal">Switch to Normal View</button>
-
 <script src="popup.js"></script>
 </body>
 </html>

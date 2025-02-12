@@ -1,17 +1,15 @@
+// manifest.json
 {
   "manifest_version": 3,
   "name": "Mobile View Switcher",
   "version": "1.0",
-  "description": "Switches between mobile and normal views based on tablet mode.",
+  "description": "Automatically switches tabs to mobile view",
   "permissions": [
-    "tabs",
-    "activeTab",
-    "scripting",
-    "storage"
+    "webNavigation",
+    "declarativeNetRequest",
+    "storage",
+    "tabs"
   ],
-  "background": {
-    "service_worker": "background.js"
-  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -20,9 +18,12 @@
       "128": "images/icon128.png"
     }
   },
+  "background": {
+    "service_worker": "background.js"
+  },
   "icons": {
-    "16": "images/icon16.png",
-    "48": "images/icon48.png",
-    "128": "images/icon128.png"
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   }
 }
