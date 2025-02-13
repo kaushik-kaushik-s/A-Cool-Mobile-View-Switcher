@@ -1,68 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <style>
-        body {
-            width: 200px;
-            padding: 10px;
-            font-family: Arial, sans-serif;
-        }
-        .toggle-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin: 10px 0;
-        }
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 34px;
-        }
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 34px;
-        }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-        input:checked + .slider {
-            background-color: #2196F3;
-        }
-        input:checked + .slider:before {
-            transform: translateX(26px);
-        }
-    </style>
+    <link rel="stylesheet" href="popup.css">
 </head>
 <body>
 <h2>Mobile Spoofer</h2>
+
 <div class="toggle-container">
-    <span>Mobile Mode</span>
+    <span>Global Mobile Mode</span>
     <label class="switch">
         <input type="checkbox" id="mobileToggle">
         <span class="slider"></span>
     </label>
 </div>
+
+<div class="domain-settings">
+    <h3>Current Domain</h3>
+    <div id="currentDomain"></div>
+    <div class="domain-buttons">
+        <button id="forceMobile">Force Mobile</button>
+        <button id="forceDesktop">Force Desktop</button>
+        <button id="removeDomain">Remove Override</button>
+    </div>
+</div>
+
+<div class="domain-list">
+    <h3>Domain Overrides</h3>
+    <div id="domainList"></div>
+</div>
+
 <script src="popup.js"></script>
 </body>
 </html>

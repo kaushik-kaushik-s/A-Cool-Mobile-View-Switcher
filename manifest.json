@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Mobile Browser Spoofer",
   "version": "1.0",
-  "description": "Forces websites to show their mobile version through comprehensive spoofing",
+  "description": "Forces websites to show their mobile version with domain-specific settings",
   "permissions": [
     "webNavigation",
     "declarativeNetRequest",

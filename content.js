@@ -27,9 +27,12 @@ function injectMobileMetaTags() {
     });
 }
 
-chrome.storage.local.get(['isMobileEnabled'], (result) => {
-    if (result.isMobileEnabled) {
-        // Run as early as possible
+chrome.runtime.sendMessage({
+    action: 'getDomainSetting',
+    url: window.location.href
+}, (response) => {
+    const shouldBeMobile = response.isMobile ?? true;
+    if (shouldBeMobile) {
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', injectMobileMetaTags);
         } else {
