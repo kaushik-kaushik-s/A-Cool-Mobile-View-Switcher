@@ -4,31 +4,15 @@
     <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-<h2>Mobile Spoofer</h2>
-
-<div class="toggle-container">
-    <span>Global Mobile Mode</span>
-    <label class="switch">
-        <input type="checkbox" id="mobileToggle">
-        <span class="slider"></span>
-    </label>
-</div>
-
-<div class="domain-settings">
-    <h3>Current Domain</h3>
-    <div id="currentDomain"></div>
-    <div class="domain-buttons">
-        <button id="forceMobile">Force Mobile</button>
-        <button id="forceDesktop">Force Desktop</button>
-        <button id="removeDomain">Remove Override</button>
+<div class="container">
+    <h1>Mobile View</h1>
+    <div class="power-button-container">
+        <button class="power-button" id="mobileToggle">
+            <span class="power-icon"></span>
+        </button>
+        <div class="status-text">Off</div>
     </div>
 </div>
-
-<div class="domain-list">
-    <h3>Domain Overrides</h3>
-    <div id="domainList"></div>
-</div>
-
 <script src="popup.js"></script>
 </body>
 </html>

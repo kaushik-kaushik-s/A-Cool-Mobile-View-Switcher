@@ -1,14 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "Mobile Browser Spoofer",
+  "name": "Mobile View Switch",
   "version": "1.0",
-  "description": "Forces websites to show their mobile version with domain-specific settings",
+  "description": "Toggle between mobile and desktop view with a single click",
   "permissions": [
     "webNavigation",
     "declarativeNetRequest",
     "storage",
-    "tabs",
-    "webRequest"
+    "tabs"
   ],
   "host_permissions": [
     "<all_urls>"

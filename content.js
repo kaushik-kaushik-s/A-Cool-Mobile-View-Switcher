@@ -27,12 +27,8 @@ function injectMobileMetaTags() {
     });
 }
 
-chrome.runtime.sendMessage({
-    action: 'getDomainSetting',
-    url: window.location.href
-}, (response) => {
-    const shouldBeMobile = response.isMobile ?? true;
-    if (shouldBeMobile) {
+chrome.storage.local.get(['isMobileEnabled'], (result) => {
+    if (result.isMobileEnabled) {
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', injectMobileMetaTags);
         } else {

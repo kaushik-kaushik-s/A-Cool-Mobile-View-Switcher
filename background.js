@@ -1,5 +1,4 @@
 let isMobileEnabled = false;
-let domainSettings = {};
 
 const MOBILE_CONFIG = {
     userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1",
@@ -16,35 +15,14 @@ const MOBILE_CONFIG = {
 
 // Initialize extension
 chrome.runtime.onInstalled.addListener(() => {
-    chrome.storage.local.set({
-        isMobileEnabled: false,
-        domainSettings: {}
-    });
+    chrome.storage.local.set({ isMobileEnabled: false });
 });
 
 // Load saved state
-chrome.storage.local.get(['isMobileEnabled', 'domainSettings'], (result) => {
+chrome.storage.local.get(['isMobileEnabled'], (result) => {
     isMobileEnabled = result.isMobileEnabled;
-    domainSettings = result.domainSettings || {};
     updateMobileMode();
 });
-
-function getDomainFromUrl(url) {
-    try {
-        const hostname = new URL(url).hostname;
-        return hostname.replace('www.', '');
-    } catch (e) {
-        return '';
-    }
-}
-
-function shouldUseMobileView(url) {
-    const domain = getDomainFromUrl(url);
-    if (domain in domainSettings) {
-        return domainSettings[domain];
-    }
-    return isMobileEnabled;
-}
 
 function updateMobileMode() {
     chrome.declarativeNetRequest.updateSessionRules({
@@ -89,26 +67,10 @@ function reloadAllTabs() {
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    switch (request.action) {
-        case 'toggleMobile':
-            isMobileEnabled = request.enabled;
-            chrome.storage.local.set({ isMobileEnabled });
-            updateMobileMode();
-            reloadAllTabs();
-            break;
-
-        case 'setDomainSetting':
-            domainSettings[request.domain] = request.isMobile;
-            chrome.storage.local.set({ domainSettings });
-            reloadAllTabs();
-            break;
-
-        case 'getDomainSetting':
-            const domain = getDomainFromUrl(request.url);
-            sendResponse({
-                domain,
-                isMobile: domain in domainSettings ? domainSettings[domain] : null
-            });
-            break;
+    if (request.action === 'toggleMobile') {
+        isMobileEnabled = request.enabled;
+        chrome.storage.local.set({ isMobileEnabled });
+        updateMobileMode();
+        reloadAllTabs();
     }
 });
