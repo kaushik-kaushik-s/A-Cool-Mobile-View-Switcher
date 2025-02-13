@@ -2,15 +2,22 @@
 <html>
 <head>
     <link rel="stylesheet" href="popup.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
 <div class="container">
-    <h1>Mobile View</h1>
-    <div class="power-button-container">
+    <div class="title">
+        <i class="fas fa-mobile-alt"></i>
+        <span>Mobile View</span>
+    </div>
+    <div class="switch-container">
         <button class="power-button" id="mobileToggle">
-            <span class="power-icon"></span>
+            <i class="fas fa-power-off"></i>
         </button>
-        <div class="status-text">Off</div>
+        <div class="status">
+            <div class="status-dot"></div>
+            <span class="status-text">Disabled</span>
+        </div>
     </div>
 </div>
 <script src="popup.js"></script>

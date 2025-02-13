@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const powerButton = document.getElementById('mobileToggle');
+    const statusDot = document.querySelector('.status-dot');
     const statusText = document.querySelector('.status-text');
 
     // Load initial state
@@ -21,12 +22,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateButtonState(isEnabled) {
         if (isEnabled) {
             powerButton.classList.add('active');
+            statusDot.classList.add('active');
             statusText.classList.add('active');
-            statusText.textContent = 'On';
+            statusText.textContent = 'Enabled';
         } else {
             powerButton.classList.remove('active');
+            statusDot.classList.remove('active');
             statusText.classList.remove('active');
-            statusText.textContent = 'Off';
+            statusText.textContent = 'Disabled';
         }
     }
 });
