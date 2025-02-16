@@ -1,7 +1,7 @@
 let isMobileEnabled = false;
-let manualOverride = false;           // true if user toggled manually
-let lastPhysicalMode = null;          // tracks the latest physical tablet mode value
-let lastOverridePhysicalMode = null;  // records the physical mode when manual override occurred
+let manualOverride = false;           // manual override flag
+let lastPhysicalMode = false;          // default to desktop (false)
+let lastOverridePhysicalMode = false;  // records the physical state at time of manual override
 
 const MOBILE_CONFIG = {
     userAgent:
@@ -26,31 +26,29 @@ async function updateMobileMode() {
 
         if (isMobileEnabled) {
             await chrome.declarativeNetRequest.updateSessionRules({
-                addRules: [
-                    {
-                        id: 1,
-                        priority: 1,
-                        action: {
-                            type: 'modifyHeaders',
-                            requestHeaders: [
-                                {
-                                    header: 'User-Agent',
-                                    operation: 'set',
-                                    value: MOBILE_CONFIG.userAgent
-                                },
-                                ...Object.entries(MOBILE_CONFIG.headers).map(([header, value]) => ({
-                                    header: header,
-                                    operation: 'set',
-                                    value: value
-                                }))
-                            ]
-                        },
-                        condition: {
-                            urlFilter: '*',
-                            resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest']
-                        }
+                addRules: [{
+                    id: 1,
+                    priority: 1,
+                    action: {
+                        type: 'modifyHeaders',
+                        requestHeaders: [
+                            {
+                                header: 'User-Agent',
+                                operation: 'set',
+                                value: MOBILE_CONFIG.userAgent
+                            },
+                            ...Object.entries(MOBILE_CONFIG.headers).map(([header, value]) => ({
+                                header: header,
+                                operation: 'set',
+                                value: value
+                            }))
+                        ]
+                    },
+                    condition: {
+                        urlFilter: '*',
+                        resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest']
                     }
-                ]
+                }]
             });
         }
         return true;
@@ -69,13 +67,13 @@ async function reloadAllTabs() {
     }
 }
 
-// Handle messages from the popup (manual toggle) and tablet detector
+// Listen for messages from popup (manual toggle) and the tablet detector
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "toggleMobile") {
-        // User manually toggled. Save the new state and mark manual override.
+        // When the user clicks the toggle, update the state immediately.
         isMobileEnabled = request.enabled;
         manualOverride = true;
-        lastOverridePhysicalMode = lastPhysicalMode; // record current physical mode at time of manual change
+        lastOverridePhysicalMode = lastPhysicalMode; // record current physical state
 
         chrome.storage.local.set({ isMobileEnabled }, async () => {
             const success = await updateMobileMode();
@@ -88,13 +86,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
         return true;
     } else if (request.action === "tabletModeChanged") {
-        // Tablet detector message providing the current physical mode
+        // Tablet detector sends the current physical state.
         const currentPhysical = request.isTabletMode;
-        // On first message, or if the physical mode has changed:
-        if (lastPhysicalMode === null || lastPhysicalMode !== currentPhysical) {
+        if (lastPhysicalMode !== currentPhysical) {
             lastPhysicalMode = currentPhysical;
-            // If a manual override is active and the physical mode is now different
-            // than what it was when the override was applied, clear the override.
+            // If a manual override is active and the physical state changed from what it was when the user toggled…
             if (manualOverride && lastOverridePhysicalMode !== currentPhysical) {
                 manualOverride = false;
                 if (isMobileEnabled !== currentPhysical) {
@@ -122,12 +118,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-// Initialize extension state on install
+// Initialize on install
 chrome.runtime.onInstalled.addListener(async () => {
     await chrome.storage.local.set({ isMobileEnabled: false });
-    await chrome.declarativeNetRequest
-        .updateSessionRules({ removeRuleIds: [1] })
-        .catch(error => console.error("Error clearing rules:", error));
+    await chrome.declarativeNetRequest.updateSessionRules({
+        removeRuleIds: [1]
+    }).catch(error => console.error("Error clearing rules:", error));
 });
 
 // Load saved state on startup
