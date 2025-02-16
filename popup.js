@@ -5,17 +5,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load initial state
     chrome.storage.local.get(['isMobileEnabled'], (result) => {
-        updateButtonState(result.isMobileEnabled);
+        updateButtonState(result.isMobileEnabled ?? false);
     });
 
     powerButton.addEventListener('click', () => {
+        // Disable the button temporarily to prevent double-clicks
+        powerButton.disabled = true;
+
         chrome.storage.local.get(['isMobileEnabled'], (result) => {
             const newState = !result.isMobileEnabled;
+
             chrome.runtime.sendMessage({
                 action: 'toggleMobile',
                 enabled: newState
+            }, (response) => {
+                if (response && response.success) {
+                    updateButtonState(newState);
+                } else {
+                    console.error('Failed to toggle mobile mode');
+                    // Revert the button state if the toggle failed
+                    updateButtonState(!newState);
+                }
+                powerButton.disabled = false;
             });
-            updateButtonState(newState);
         });
     });
 

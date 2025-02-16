@@ -14,22 +14,29 @@ const MOBILE_CONFIG = {
 };
 
 // Initialize extension
-chrome.runtime.onInstalled.addListener(() => {
-    chrome.storage.local.set({ isMobileEnabled: false });
+chrome.runtime.onInstalled.addListener(async () => {
+    await chrome.storage.local.set({ isMobileEnabled: false });
+    await chrome.declarativeNetRequest.updateSessionRules({
+        removeRuleIds: [1]
+    }).catch(error => console.error('Error clearing rules:', error));
 });
 
 // Load saved state
-chrome.storage.local.get(['isMobileEnabled'], (result) => {
+chrome.storage.local.get(['isMobileEnabled'], async (result) => {
     isMobileEnabled = result.isMobileEnabled;
-    updateMobileMode();
+    await updateMobileMode();
 });
 
-function updateMobileMode() {
-    chrome.declarativeNetRequest.updateSessionRules({
-        removeRuleIds: [1]
-    }).then(() => {
+async function updateMobileMode() {
+    try {
+        // First, remove existing rules
+        await chrome.declarativeNetRequest.updateSessionRules({
+            removeRuleIds: [1]
+        });
+
+        // Then, add new rule if mobile is enabled
         if (isMobileEnabled) {
-            chrome.declarativeNetRequest.updateSessionRules({
+            await chrome.declarativeNetRequest.updateSessionRules({
                 addRules: [{
                     id: 1,
                     priority: 1,
@@ -55,22 +62,34 @@ function updateMobileMode() {
                 }]
             });
         }
-    });
+        return true;
+    } catch (error) {
+        console.error('Error updating rules:', error);
+        return false;
+    }
 }
 
-function reloadAllTabs() {
-    chrome.tabs.query({}, (tabs) => {
-        tabs.forEach(tab => {
-            chrome.tabs.reload(tab.id);
-        });
-    });
+async function reloadAllTabs() {
+    const tabs = await chrome.tabs.query({});
+    for (const tab of tabs) {
+        if (!tab.url.startsWith('chrome://')) {
+            await chrome.tabs.reload(tab.id);
+        }
+    }
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'toggleMobile') {
         isMobileEnabled = request.enabled;
-        chrome.storage.local.set({ isMobileEnabled });
-        updateMobileMode();
-        reloadAllTabs();
+        chrome.storage.local.set({ isMobileEnabled }, async () => {
+            const success = await updateMobileMode();
+            if (success) {
+                await reloadAllTabs();
+                sendResponse({ success: true });
+            } else {
+                sendResponse({ success: false });
+            }
+        });
+        return true; // Keep the message channel open for the async response
     }
 });

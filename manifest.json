@@ -1,10 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Mobile View Switch",
+  "name": "A Cool Mobile View Switcher",
   "version": "1.0",
-  "description": "Toggle between mobile and desktop view with a single click",
+  "description": "Toggle between mobile and desktop view with a single click ;). By: Kaushik Sannidhi",
   "permissions": [
-    "webNavigation",
     "declarativeNetRequest",
     "storage",
     "tabs"

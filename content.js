@@ -2,15 +2,13 @@ function injectMobileMetaTags() {
     const viewport = document.createElement('meta');
     viewport.name = 'viewport';
     viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0';
-    document.head.appendChild(viewport);
 
-    // Override any existing viewport tags
+    // Remove all existing viewport tags first
     const existingViewports = document.querySelectorAll('meta[name="viewport"]');
-    existingViewports.forEach(tag => {
-        if (tag !== viewport) {
-            tag.remove();
-        }
-    });
+    existingViewports.forEach(tag => tag.remove());
+
+    // Add our viewport tag
+    document.head.appendChild(viewport);
 
     // Add mobile-specific meta tags
     const mobileMetaTags = [
@@ -19,6 +17,13 @@ function injectMobileMetaTags() {
         { name: 'apple-mobile-web-app-capable', content: 'yes' }
     ];
 
+    // Remove any existing tags with the same names
+    mobileMetaTags.forEach(tagInfo => {
+        const existingTags = document.querySelectorAll(`meta[name="${tagInfo.name}"]`);
+        existingTags.forEach(tag => tag.remove());
+    });
+
+    // Add new tags
     mobileMetaTags.forEach(tag => {
         const meta = document.createElement('meta');
         meta.name = tag.name;
@@ -27,6 +32,19 @@ function injectMobileMetaTags() {
     });
 }
 
+// Listen for storage changes
+chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'local' && changes.isMobileEnabled) {
+        if (changes.isMobileEnabled.newValue) {
+            injectMobileMetaTags();
+        } else {
+            // Reload the page when disabled to remove the mobile meta tags
+            window.location.reload();
+        }
+    }
+});
+
+// Initial check
 chrome.storage.local.get(['isMobileEnabled'], (result) => {
     if (result.isMobileEnabled) {
         if (document.readyState === 'loading') {
