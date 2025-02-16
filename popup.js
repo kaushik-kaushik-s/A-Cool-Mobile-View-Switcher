@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load initial state
     chrome.storage.local.get(['isMobileEnabled'], (result) => {
         updateButtonState(result.isMobileEnabled ?? false);
+        // Enable the button once the state is loaded
+        powerButton.disabled = false;
     });
 
     powerButton.addEventListener('click', () => {
@@ -29,6 +31,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 powerButton.disabled = false;
             });
         });
+    });
+
+    // Listen for storage changes to update the UI in realtime
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+        if (namespace === 'local' && changes.isMobileEnabled) {
+            updateButtonState(changes.isMobileEnabled.newValue);
+        }
     });
 
     function updateButtonState(isEnabled) {
