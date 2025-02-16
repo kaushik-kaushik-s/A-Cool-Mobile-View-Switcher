@@ -13,28 +13,12 @@ const MOBILE_CONFIG = {
     }
 };
 
-// Initialize extension
-chrome.runtime.onInstalled.addListener(async () => {
-    await chrome.storage.local.set({ isMobileEnabled: false });
-    await chrome.declarativeNetRequest.updateSessionRules({
-        removeRuleIds: [1]
-    }).catch(error => console.error('Error clearing rules:', error));
-});
-
-// Load saved state
-chrome.storage.local.get(['isMobileEnabled'], async (result) => {
-    isMobileEnabled = result.isMobileEnabled;
-    await updateMobileMode();
-});
-
 async function updateMobileMode() {
     try {
-        // First, remove existing rules
         await chrome.declarativeNetRequest.updateSessionRules({
             removeRuleIds: [1]
         });
 
-        // Then, add new rule if mobile is enabled
         if (isMobileEnabled) {
             await chrome.declarativeNetRequest.updateSessionRules({
                 addRules: [{
@@ -78,6 +62,7 @@ async function reloadAllTabs() {
     }
 }
 
+// Handle messages from popup and tablet detector
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'toggleMobile') {
         isMobileEnabled = request.enabled;
@@ -90,6 +75,31 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 sendResponse({ success: false });
             }
         });
-        return true; // Keep the message channel open for the async response
+        return true;
+    } else if (request.action === 'tabletModeChanged') {
+        // Only update if the state is different
+        if (isMobileEnabled !== request.isTabletMode) {
+            isMobileEnabled = request.isTabletMode;
+            chrome.storage.local.set({ isMobileEnabled }, async () => {
+                const success = await updateMobileMode();
+                if (success) {
+                    await reloadAllTabs();
+                }
+            });
+        }
     }
+});
+
+// Initialize extension
+chrome.runtime.onInstalled.addListener(async () => {
+    await chrome.storage.local.set({ isMobileEnabled: false });
+    await chrome.declarativeNetRequest.updateSessionRules({
+        removeRuleIds: [1]
+    }).catch(error => console.error('Error clearing rules:', error));
+});
+
+// Load saved state
+chrome.storage.local.get(['isMobileEnabled'], async (result) => {
+    isMobileEnabled = result.isMobileEnabled;
+    await updateMobileMode();
 });
