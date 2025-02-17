@@ -1,7 +1,95 @@
-// --- Helper function to remove desktop-forcing parameters from a URL ---
+// content.js
+
+function injectMobileMetaTags() {
+    const viewport = document.createElement('meta');
+    viewport.name = 'viewport';
+    viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0';
+
+    // Remove any existing viewport meta tags
+    document.querySelectorAll('meta[name="viewport"]').forEach(tag => tag.remove());
+    document.head.appendChild(viewport);
+
+    // Define additional mobile meta tags optimized for iPad
+    const mobileMetaTags = [
+        { name: 'HandheldFriendly', content: 'true' },
+        { name: 'MobileOptimized', content: 'width' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'black' }
+    ];
+
+    mobileMetaTags.forEach(tagInfo => {
+        document.querySelectorAll(`meta[name="${tagInfo.name}"]`).forEach(tag => tag.remove());
+        const meta = document.createElement('meta');
+        meta.name = tagInfo.name;
+        meta.content = tagInfo.content;
+        document.head.appendChild(meta);
+    });
+}
+
+// Handle Reddit mobile optimization
+function handleReddit() {
+    const url = new URL(window.location.href);
+    chrome.storage.local.get(['isMobileEnabled'], (result) => {
+        if (result.isMobileEnabled && url.hostname.includes('reddit.com')) {
+            // For iPad, we'll use the regular reddit.com with mobile optimizations
+            if (url.searchParams.has('mobile_web')) {
+                return; // Already optimized for mobile
+            }
+            url.searchParams.set('mobile_web', '1');
+            window.location.replace(url.toString());
+        }
+    });
+}
+
+// Handle YouTube optimization
+function handleYoutube() {
+    const url = new URL(window.location.href);
+    if (url.hostname.includes('youtube.com')) {
+        if (url.searchParams.has('app')) {
+            url.searchParams.delete('app');
+            window.location.replace(url.toString());
+        }
+    }
+}
+
+// Execute site-specific handlers
+if (window.location.hostname.includes('reddit.com')) {
+    handleReddit();
+} else if (window.location.hostname.includes('youtube.com')) {
+    handleYoutube();
+}
+
+// Listen for storage changes
+chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'local' && changes.isMobileEnabled) {
+        if (changes.isMobileEnabled.newValue) {
+            injectMobileMetaTags();
+            // Re-run site-specific handlers
+            if (window.location.hostname.includes('reddit.com')) {
+                handleReddit();
+            } else if (window.location.hostname.includes('youtube.com')) {
+                handleYoutube();
+            }
+        } else {
+            window.location.reload();
+        }
+    }
+});
+
+// Initialize on page load
+chrome.storage.local.get(['isMobileEnabled'], (result) => {
+    if (result.isMobileEnabled) {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', injectMobileMetaTags);
+        } else {
+            injectMobileMetaTags();
+        }
+    }
+});
+
+// Clean desktop parameters from URLs
 function cleanDesktopParams(url) {
     let changed = false;
-    // List of parameter keys known to force a desktop view
     const desktopForcingParams = ['app', 'mode', 'view', 'display', 'force'];
     desktopForcingParams.forEach(key => {
         if (url.searchParams.has(key)) {
@@ -15,7 +103,7 @@ function cleanDesktopParams(url) {
     return changed;
 }
 
-// --- On initial load, if the URL contains any desktop-forcing parameters, remove them and reload ---
+// Initial URL cleanup
 (function removeAndReloadDesktopParams() {
     const url = new URL(window.location.href);
     if (cleanDesktopParams(url)) {
@@ -23,7 +111,7 @@ function cleanDesktopParams(url) {
     }
 })();
 
-// --- Override the history API to ensure that navigation doesn't add desktop-forcing parameters ---
+// Override history API
 (function(history) {
     const originalPushState = history.pushState;
     history.pushState = function(state, title, url) {
@@ -58,54 +146,3 @@ function cleanDesktopParams(url) {
         }
     });
 })(window.history);
-
-// --- Existing mobile meta tag injection logic below ---
-
-function injectMobileMetaTags() {
-    const viewport = document.createElement('meta');
-    viewport.name = 'viewport';
-    viewport.content =
-        'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0';
-
-    // Remove any existing viewport meta tags.
-    document.querySelectorAll('meta[name="viewport"]').forEach(tag => tag.remove());
-    document.head.appendChild(viewport);
-
-    // Define additional mobile meta tags.
-    const mobileMetaTags = [
-        { name: 'HandheldFriendly', content: 'true' },
-        { name: 'MobileOptimized', content: 'width' },
-        { name: 'apple-mobile-web-app-capable', content: 'yes' }
-    ];
-
-    mobileMetaTags.forEach(tagInfo => {
-        document.querySelectorAll(`meta[name="${tagInfo.name}"]`).forEach(tag => tag.remove());
-        const meta = document.createElement('meta');
-        meta.name = tagInfo.name;
-        meta.content = tagInfo.content;
-        document.head.appendChild(meta);
-    });
-}
-
-// Listen for storage changes to inject or remove mobile meta tags in real time.
-chrome.storage.onChanged.addListener((changes, namespace) => {
-    if (namespace === 'local' && changes.isMobileEnabled) {
-        if (changes.isMobileEnabled.newValue) {
-            injectMobileMetaTags();
-        } else {
-            // Reload the page when mobile mode is disabled so meta tags are cleared.
-            window.location.reload();
-        }
-    }
-});
-
-// On initial load, inject mobile meta tags if mobile mode is enabled.
-chrome.storage.local.get(['isMobileEnabled'], (result) => {
-    if (result.isMobileEnabled) {
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', injectMobileMetaTags);
-        } else {
-            injectMobileMetaTags();
-        }
-    }
-});
