@@ -127,68 +127,43 @@ body {
     box-shadow: inset 2px 2px 5px #151618,
     inset -2px -2px 5px #232427;
     transition: all 0.3s ease;
+    border: 1px solid transparent;
 }
 
 .mode-indicator i {
     font-size: 14px;
-    color: #666;
+    color: #2ed573;
     transition: all 0.3s ease;
 }
 
 .mode-text {
     font-size: 12px;
     font-weight: 500;
-    color: #666;
+    color: #2ed573;
     letter-spacing: 0.5px;
     transition: all 0.3s ease;
 }
 
-/* Active Auto-Detect Mode */
-.mode-indicator.active {
-    background: linear-gradient(145deg, #1e1f23, #1a1b1e);
+/* Auto Mode - Green */
+.mode-indicator:not(.manual) {
+    border-color: #2ed573;
     box-shadow: 0 0 15px rgba(46, 213, 115, 0.2);
 }
 
-.mode-indicator.active i {
+.mode-indicator:not(.manual) i,
+.mode-indicator:not(.manual) .mode-text {
     color: #2ed573;
-    text-shadow: 0 0 8px rgba(46, 213, 115, 0.4);
 }
 
-.mode-indicator.active .mode-text {
-    color: #2ed573;
-    text-shadow: 0 0 8px rgba(46, 213, 115, 0.4);
-}
-
-/* Manual Mode */
+/* Manual Mode - Yellow */
 .mode-indicator.manual {
-    background: linear-gradient(145deg, #1e1f23, #1a1b1e);
-    box-shadow: 0 0 15px rgba(61, 138, 255, 0.2);
+    border-color: #ffd700;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
 }
 
-.mode-indicator.manual i {
-    color: #3d8aff;
-    text-shadow: 0 0 8px rgba(61, 138, 255, 0.4);
-}
-
+.mode-indicator.manual i,
 .mode-indicator.manual .mode-text {
-    color: #3d8aff;
-    text-shadow: 0 0 8px rgba(61, 138, 255, 0.4);
-}
-
-/* Hover effects */
-.container:hover .power-button:not(.active) i {
-    color: #888;
-}
-
-/* Animation for status change */
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-}
-
-.power-button.active i {
-    animation: pulse 2s infinite;
+    color: #ffd700;
 }
 
 /* Toast notification */
@@ -210,4 +185,38 @@ body {
 @keyframes fadeInOut {
     0%, 100% { opacity: 0; transform: translate(-50%, 20px); }
     10%, 90% { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Animation for status change */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.power-button.active i {
+    animation: pulse 2s infinite;
+}
+
+/* Loading spinner */
+.loading-spinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 24px;
+    height: 24px;
+    border: 3px solid #3d8aff;
+    border-top: 3px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.loading-spinner.hidden {
+    display: none;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
 }

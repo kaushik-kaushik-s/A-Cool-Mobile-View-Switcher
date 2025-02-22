@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusDot = document.querySelector('.status-dot');
     const statusText = document.querySelector('.status-text');
     const modeText = document.querySelector('.mode-text');
+    const modeIndicator = document.querySelector('.mode-indicator');
     const loadingSpinner = document.createElement('div');
     loadingSpinner.className = 'loading-spinner hidden';
     document.body.appendChild(loadingSpinner);
@@ -60,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
         statusText.textContent = isEnabled ? 'Enabled' : 'Disabled';
 
         modeText.textContent = isManual ? 'Manual Mode' : 'Auto-Detect Mode';
-        modeText.classList.toggle('manual', isManual);
+        modeIndicator.classList.toggle('manual', isManual);
     }
 
     function showToast(message) {
