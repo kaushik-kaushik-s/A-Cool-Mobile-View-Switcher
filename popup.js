@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modeText = document.querySelector('.mode-text');
     const modeIndicator = document.querySelector('.mode-indicator');
     const loadingSpinner = document.createElement('div');
+    const modeIcon = document.getElementById('mode-icon');
     loadingSpinner.className = 'loading-spinner hidden';
     document.body.appendChild(loadingSpinner);
 
@@ -59,7 +60,11 @@ document.addEventListener('DOMContentLoaded', () => {
         statusDot.classList.toggle('active', isEnabled);
         statusText.classList.toggle('active', isEnabled);
         statusText.textContent = isEnabled ? 'Enabled' : 'Disabled';
-
+        if (isManual) {
+            modeIcon.style.display = 'none';
+        } else {
+            modeIcon.style.display = 'inline-block';
+        }
         modeText.textContent = isManual ? 'Manual Mode' : 'Auto-Detect Mode';
         modeIndicator.classList.toggle('manual', isManual);
     }
