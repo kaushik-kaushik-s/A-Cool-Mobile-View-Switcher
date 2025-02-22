@@ -1,24 +1,26 @@
-// background.js
-
 let isMobileEnabled = false;
-let manualOverride = false;
-let lastPhysicalMode = false;
-let lastOverridePhysicalMode = false;
+let isManualOverride = false;
+let manualCycleCount = 0;
 
-// Updated mobile configuration for iPad Chrome
+// iPad Chrome User-Agent
 const MOBILE_CONFIG = {
-    userAgent: 'Mozilla/5.0 (iPad; CPU OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/114.0.5735.124 Mobile/15E148 Safari/604.1',
-    headers: {
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Sec-CH-UA-Mobile': '?1',
-        'Sec-CH-UA-Platform': '"iPadOS"',
-        'Sec-CH-UA': '"Chrome";v="114"',
-        'DNT': '1'
-    }
+    userAgent: 'Mozilla/5.0 (iPad; CPU OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/114.0.5735.124 Mobile/15E148 Safari/604.1'
 };
 
-async function updateMobileMode() {
+async function reloadAllTabs() {
+    const tabs = await chrome.tabs.query({});
+    for (const tab of tabs) {
+        if (!tab.url.startsWith('chrome://')) {
+            try {
+                await chrome.tabs.reload(tab.id);
+            } catch (error) {
+                console.error(`Error reloading tab ${tab.id}:`, error);
+            }
+        }
+    }
+}
+
+async function updateUserAgent() {
     try {
         await chrome.declarativeNetRequest.updateSessionRules({
             removeRuleIds: [1]
@@ -36,94 +38,105 @@ async function updateMobileMode() {
                                 header: 'User-Agent',
                                 operation: 'set',
                                 value: MOBILE_CONFIG.userAgent
-                            },
-                            ...Object.entries(MOBILE_CONFIG.headers).map(([header, value]) => ({
-                                header: header,
-                                operation: 'set',
-                                value: value
-                            }))
+                            }
                         ]
                     },
                     condition: {
                         urlFilter: '*',
-                        resourceTypes: ['main_frame', 'sub_frame', 'xmlhttprequest']
+                        resourceTypes: ['main_frame', 'sub_frame']
                     }
                 }]
             });
         }
-        return true;
     } catch (error) {
-        console.error("Error updating rules:", error);
-        return false;
+        console.error("Error updating User-Agent:", error);
     }
 }
 
-async function reloadAllTabs() {
-    const tabs = await chrome.tabs.query({});
-    for (const tab of tabs) {
-        if (!tab.url.startsWith("chrome://")) {
-            await chrome.tabs.reload(tab.id);
-        }
-    }
-}
-
-// Listen for messages from popup and tablet detector
+// Handle pointer change detection from content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "toggleMobile") {
-        isMobileEnabled = request.enabled;
-        manualOverride = true;
-        lastOverridePhysicalMode = lastPhysicalMode;
-
-        chrome.storage.local.set({ isMobileEnabled }, async () => {
-            const success = await updateMobileMode();
-            if (success) {
-                await reloadAllTabs();
-                sendResponse({ success: true });
-            } else {
-                sendResponse({ success: false });
-            }
-        });
+    if (request.action === "pointerChanged") {
+        handlePointerChange(request.isCoarse);
+        sendResponse({ success: true });
         return true;
-    } else if (request.action === "tabletModeChanged") {
-        const currentPhysical = request.isTabletMode;
-        if (lastPhysicalMode !== currentPhysical) {
-            lastPhysicalMode = currentPhysical;
-            if (manualOverride && lastOverridePhysicalMode !== currentPhysical) {
-                manualOverride = false;
-                if (isMobileEnabled !== currentPhysical) {
-                    isMobileEnabled = currentPhysical;
-                    chrome.storage.local.set({ isMobileEnabled }, async () => {
-                        const success = await updateMobileMode();
-                        if (success) {
-                            await reloadAllTabs();
-                        }
-                    });
-                }
-            } else if (!manualOverride) {
-                if (isMobileEnabled !== currentPhysical) {
-                    isMobileEnabled = currentPhysical;
-                    chrome.storage.local.set({ isMobileEnabled }, async () => {
-                        const success = await updateMobileMode();
-                        if (success) {
-                            await reloadAllTabs();
-                        }
-                    });
-                }
-            }
-        }
+    } else if (request.action === "toggleMobile") {
+        handleManualToggle(request.enabled, sendResponse);
+        return true;
     }
 });
 
-// Initialize on install
+async function handlePointerChange(isCoarse) {
+    if (!isManualOverride) {
+        const newState = isCoarse;
+        if (newState !== isMobileEnabled) {
+            isMobileEnabled = newState;
+            await chrome.storage.local.set({
+                isMobileEnabled,
+                isManualOverride,
+                manualCycleCount
+            });
+            await updateUserAgent();
+            await reloadAllTabs();
+            // Notify popup of state change
+            chrome.runtime.sendMessage({
+                action: "stateUpdated",
+                isMobileEnabled,
+                isManualOverride,
+                isAutoDetected: true
+            });
+        }
+    }
+}
+
+async function handleManualToggle(enabled, sendResponse) {
+    try {
+        isManualOverride = true;
+        isMobileEnabled = enabled;
+        manualCycleCount++;
+
+        // Reset to auto mode after a full cycle (on->off or off->on->off)
+        if (manualCycleCount >= 2) {
+            isManualOverride = false;
+            manualCycleCount = 0;
+        }
+
+        await chrome.storage.local.set({
+            isMobileEnabled,
+            isManualOverride,
+            manualCycleCount
+        });
+        await updateUserAgent();
+        await reloadAllTabs();
+        sendResponse({
+            success: true,
+            isManualOverride,
+            manualCycleCount
+        });
+    } catch (error) {
+        console.error("Error during manual toggle:", error);
+        sendResponse({ success: false, error: error.message });
+    }
+}
+
+// Initialize stored settings
 chrome.runtime.onInstalled.addListener(async () => {
-    await chrome.storage.local.set({ isMobileEnabled: false });
-    await chrome.declarativeNetRequest.updateSessionRules({
-        removeRuleIds: [1]
-    }).catch(error => console.error("Error clearing rules:", error));
+    chrome.storage.local.get(["isMobileEnabled", "isManualOverride", "manualCycleCount"], async (result) => {
+        isMobileEnabled = result.isMobileEnabled || false;
+        isManualOverride = result.isManualOverride || false;
+        manualCycleCount = result.manualCycleCount || 0;
+        await updateUserAgent();
+    });
 });
 
-// Load saved state on startup
-chrome.storage.local.get(["isMobileEnabled"], async (result) => {
-    isMobileEnabled = result.isMobileEnabled;
-    await updateMobileMode();
+// Handle tab updates
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.status === 'loading' && tab.url && !tab.url.startsWith('chrome://')) {
+        chrome.tabs.sendMessage(tabId, {
+            action: "checkMobileState",
+            isMobileEnabled: isMobileEnabled,
+            isManualOverride: isManualOverride
+        }).catch(() => {
+            // Suppress errors for tabs that don't have the content script loaded yet
+        });
+    }
 });

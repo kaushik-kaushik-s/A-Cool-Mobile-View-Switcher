@@ -1,4 +1,18 @@
-// content.js
+// Pointer detection for 2-in-1 devices
+let mediaQuery = window.matchMedia('(pointer: coarse)');
+
+function handlePointerChange(e) {
+    chrome.runtime.sendMessage({
+        action: "pointerChanged",
+        isCoarse: e.matches
+    });
+}
+
+// Listen for pointer changes
+mediaQuery.addListener(handlePointerChange);
+
+// Check initial state
+handlePointerChange(mediaQuery);
 
 function injectMobileMetaTags() {
     const viewport = document.createElement('meta');
@@ -26,21 +40,6 @@ function injectMobileMetaTags() {
     });
 }
 
-// Handle Reddit mobile optimization
-function handleReddit() {
-    const url = new URL(window.location.href);
-    chrome.storage.local.get(['isMobileEnabled'], (result) => {
-        if (result.isMobileEnabled && url.hostname.includes('reddit.com')) {
-            // For iPad, we'll use the regular reddit.com with mobile optimizations
-            if (url.searchParams.has('mobile_web')) {
-                return; // Already optimized for mobile
-            }
-            url.searchParams.set('mobile_web', '1');
-            window.location.replace(url.toString());
-        }
-    });
-}
-
 // Handle YouTube optimization
 function handleYoutube() {
     const url = new URL(window.location.href);
@@ -52,12 +51,26 @@ function handleYoutube() {
     }
 }
 
-// Execute site-specific handlers
-if (window.location.hostname.includes('reddit.com')) {
-    handleReddit();
-} else if (window.location.hostname.includes('youtube.com')) {
+if (window.location.hostname.includes('youtube.com')) {
     handleYoutube();
 }
+
+// Listen for messages from background script
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === "checkMobileState") {
+        if (message.isMobileEnabled) {
+            injectMobileMetaTags();
+            // Re-run site-specific handlers
+            if (window.location.hostname.includes('reddit.com')) {
+                handleReddit();
+            } else if (window.location.hostname.includes('youtube.com')) {
+                handleYoutube();
+            }
+        }
+        sendResponse({ success: true });
+    }
+    return true;
+});
 
 // Listen for storage changes
 chrome.storage.onChanged.addListener((changes, namespace) => {
